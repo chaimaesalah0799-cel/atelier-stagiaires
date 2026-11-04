@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inscription</title>
+</head>
+<body>
+  <h1>Inscription stagiaire</h1>
+  <form id="form">
+    <input name="nom" placeholder="Nom" required><br>
+    <input name="prenom" placeholder="Prénom" required><br>
+    <input name="ville" placeholder="Ville" required><br>
+    <input type="file" name="photo" accept="image/*" required><br>
+    <button type="submit">Inscrire</button>
+  </form>
+  <p id="msg"></p>
+  <a href="liste.html">Voir la liste</a>
+
+  <script>
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('msg');
+      msg.textContent = 'Envoi en cours...';
+      try {
+        const res = await fetch('/api/inscrire.php', {
+          method: 'POST',
+          body: new FormData(e.target)
+        });
+        const data = await res.json();
+        msg.textContent = data.message;
+        if (data.success) e.target.reset();
+      } catch (err) {
+        msg.textContent = 'Erreur réseau';
+      }
+    });
+  </script>
+</body>
+</html>

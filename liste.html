@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Liste des stagiaires</title>
+  <style>
+    .card { display:inline-block; width:180px; margin:10px; text-align:center; border:1px solid #ddd; padding:10px; border-radius:8px; }
+    .card img { width:100%; height:160px; object-fit:cover; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <h1>Liste des stagiaires</h1>
+  <a href="index.html">Retour à l'inscription</a>
+  <div id="liste">Chargement...</div>
+
+  <script>
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+    fetch('/api/liste.php')
+      .then(r => r.json())
+      .then(res => {
+        const div = document.getElementById('liste');
+        if (!res.success || res.data.length === 0) {
+          div.textContent = 'Aucun stagiaire.';
+          return;
+        }
+        div.innerHTML = res.data.map(s => `
+          <div class="card">
+            <img src="${esc(s.photo)}" alt="photo">
+            <h3>${esc(s.prenom)} ${esc(s.nom)}</h3>
+            <p>${esc(s.ville)}</p>
+          </div>`).join('');
+      })
+      .catch(() => document.getElementById('liste').textContent = 'Erreur de chargement');
+  </script>
+</body>
+</html>
