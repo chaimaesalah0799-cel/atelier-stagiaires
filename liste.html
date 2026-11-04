@@ -4,38 +4,81 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Liste des stagiaires</title>
-  <style>
-    .card { display:inline-block; width:180px; margin:10px; text-align:center; border:1px solid #ddd; padding:10px; border-radius:8px; }
-    .card img { width:100%; height:160px; object-fit:cover; border-radius:6px; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Liste des stagiaires</h1>
-  <a href="index.html">Retour à l'inscription</a>
-  <div id="liste">Chargement...</div>
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><i></i>Atelier stagiaires</div>
+    <a class="btn-solid" href="index.html">Nouvelle inscription</a>
+  </div>
+</header>
 
-  <script>
-    function esc(s) {
-      const d = document.createElement('div');
-      d.textContent = s;
-      return d.innerHTML;
+<main class="wrap">
+  <div class="head">
+    <div>
+      <h1>Les stagiaires</h1>
+      <p class="count" id="count">Chargement…</p>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Rechercher un nom ou une ville" aria-label="Rechercher">
+    </div>
+  </div>
+  <div class="grid" id="grid">
+    <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
+  </div>
+</main>
+
+<script>
+  const grid = document.getElementById('grid');
+  const count = document.getElementById('count');
+  const q = document.getElementById('q');
+  let all = [];
+
+  function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+
+  function render(list) {
+    count.textContent = list.length + (list.length > 1 ? ' stagiaires inscrits' : ' stagiaire inscrit');
+    if (!list.length) {
+      grid.innerHTML = '<div class="empty">Aucun résultat. <a href="index.html">Inscrire un stagiaire</a></div>';
+      return;
     }
-    fetch('/api/liste.php')
-      .then(r => r.json())
-      .then(res => {
-        const div = document.getElementById('liste');
-        if (!res.success || res.data.length === 0) {
-          div.textContent = 'Aucun stagiaire.';
-          return;
-        }
-        div.innerHTML = res.data.map(s => `
-          <div class="card">
-            <img src="${esc(s.photo)}" alt="photo">
-            <h3>${esc(s.prenom)} ${esc(s.nom)}</h3>
-            <p>${esc(s.ville)}</p>
-          </div>`).join('');
-      })
-      .catch(() => document.getElementById('liste').textContent = 'Erreur de chargement');
-  </script>
+    grid.innerHTML = list.map((s, i) => {
+      const ini = esc(((s.prenom || '')[0] || '') + ((s.nom || '')[0] || '')).toUpperCase();
+      return `
+      <article class="person" style="--i:${Math.min(i, 12)}">
+        <div class="photo">
+          <div class="ini">${ini}</div>
+          <img src="${esc(s.photo)}" alt="Photo de ${esc(s.prenom)} ${esc(s.nom)}" loading="lazy" onerror="this.remove()">
+        </div>
+        <div class="info">
+          <h3>${esc(s.prenom)} ${esc(s.nom)}</h3>
+          <span class="pill">${esc(s.ville)}</span>
+        </div>
+      </article>`;
+    }).join('');
+  }
+
+  q.addEventListener('input', () => {
+    const t = q.value.trim().toLowerCase();
+    render(all.filter(s => (s.nom + ' ' + s.prenom + ' ' + s.ville).toLowerCase().includes(t)));
+  });
+
+  fetch('/api/liste.php')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error();
+      all = res.data;
+      render(all);
+    })
+    .catch(() => {
+      count.textContent = '';
+      grid.innerHTML = '<div class="empty">Impossible de charger la liste. Réessaie dans un instant.</div>';
+    });
+</script>
 </body>
 </html>

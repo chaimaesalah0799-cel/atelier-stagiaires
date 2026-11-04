@@ -3,37 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Inscription</title>
+  <title>Inscription des stagiaires</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Inscription stagiaire</h1>
-  <form id="form">
-    <input name="nom" placeholder="Nom" required><br>
-    <input name="prenom" placeholder="Prénom" required><br>
-    <input name="ville" placeholder="Ville" required><br>
-    <input type="file" name="photo" accept="image/*" required><br>
-    <button type="submit">Inscrire</button>
-  </form>
-  <p id="msg"></p>
-  <a href="liste.html">Voir la liste</a>
+<main class="shell">
+  <section class="hero">
+    <div class="brand"><i></i>Atelier stagiaires</div>
+    <div>
+      <h1>Rejoins la promo.</h1>
+      <p>Ajoute ton nom, ta ville et ta photo. Ton profil apparaît tout de suite dans la liste.</p>
+    </div>
+    <div class="hero-foot"><a class="btn-ghost" href="liste.html">Voir la liste</a></div>
+    <div class="rings" aria-hidden="true"><span></span><span></span><span></span></div>
+  </section>
 
-  <script>
-    document.getElementById('form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('msg');
-      msg.textContent = 'Envoi en cours...';
-      try {
-        const res = await fetch('/api/inscrire.php', {
-          method: 'POST',
-          body: new FormData(e.target)
-        });
-        const data = await res.json();
-        msg.textContent = data.message;
-        if (data.success) e.target.reset();
-      } catch (err) {
-        msg.textContent = 'Erreur réseau';
+  <section class="panel">
+    <form id="form" class="card-form" novalidate>
+      <h2>Créer mon profil</h2>
+      <p class="sub">Tous les champs sont obligatoires.</p>
+
+      <label class="avatar" id="avatar">
+        <input type="file" name="photo" id="photo" accept="image/jpeg,image/png,image/webp" required aria-label="Choisir une photo">
+        <div class="disc"><span>Ajouter<br>une photo</span><img id="preview" alt="Aperçu de la photo"></div>
+      </label>
+
+      <div class="field"><input id="nom" name="nom" placeholder=" " required autocomplete="family-name"><label for="nom">Nom</label></div>
+      <div class="field"><input id="prenom" name="prenom" placeholder=" " required autocomplete="given-name"><label for="prenom">Prénom</label></div>
+      <div class="field"><input id="ville" name="ville" placeholder=" " required autocomplete="address-level2"><label for="ville">Ville</label></div>
+
+      <button class="btn" id="btn" type="submit"><span class="txt">Inscrire</span><span class="spin"></span></button>
+      <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+</main>
+
+<script>
+  const form = document.getElementById('form');
+  const btn = document.getElementById('btn');
+  const msg = document.getElementById('msg');
+  const avatar = document.getElementById('avatar');
+  const preview = document.getElementById('preview');
+  const photo = document.getElementById('photo');
+
+  photo.addEventListener('change', () => {
+    const f = photo.files[0];
+    if (!f) { avatar.classList.remove('has'); return; }
+    preview.src = URL.createObjectURL(f);
+    avatar.classList.add('has');
+  });
+
+  function show(type, text) {
+    msg.className = 'msg';
+    void msg.offsetWidth;
+    const tick = type === 'ok'
+      ? '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>'
+      : '';
+    msg.innerHTML = tick + '<span></span>';
+    msg.querySelector('span').textContent = text;
+    msg.className = 'msg show ' + type;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.checkValidity()) { show('err', 'Remplis tous les champs et choisis une photo.'); return; }
+    btn.disabled = true; btn.classList.add('load');
+    msg.className = 'msg';
+    try {
+      const res = await fetch('/api/inscrire.php', { method: 'POST', body: new FormData(form) });
+      const data = await res.json();
+      if (data.success) {
+        show('ok', data.message || 'Inscription enregistrée.');
+        form.reset(); avatar.classList.remove('has');
+      } else {
+        show('err', data.message || 'Inscription impossible.');
       }
-    });
-  </script>
+    } catch (err) {
+      show('err', 'Connexion impossible. Vérifie ton réseau et réessaie.');
+    } finally {
+      btn.disabled = false; btn.classList.remove('load');
+    }
+  });
+</script>
 </body>
 </html>
